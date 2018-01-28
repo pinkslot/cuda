@@ -91,7 +91,6 @@ struct Sphere {
 	Source src;
 
 	__device__ float intersect(const Ray &r) const { // returns distance, 0 if nohit 
-
 		// Ray/sphere intersection
 		// Quadratic formula required to solve ax^2 + bx + c = 0 
 		// Solution x = (-b +- sqrt(b*b - 4ac)) / 2a
@@ -111,41 +110,48 @@ struct Sphere {
 #define	INIT_SPHERE(...) { ##__VA_ARGS__,  },
 
 #define clearMedia { { 0.f, 0.f, 0.f }, 0.f, 1., 1., 1. }
+#define superMedia { { .3f, .3f, .8f }, .01f, 1., 1., 1. }
+#define superSrc { { 0, .0, -1.0 }, 70., .5 }
 #define glassMedia { { 0.f, 0.f, 0.f }, 0.f, 1.3, 1., 1. }
 #define bubbleMedia { { 0.f, 0.f, 0.f }, 0.f, 1.1, 1., 1. }
 #define mirrorMedia { { 0.f, 0.f, 0.f }, 0.f, .001, 1., 1. }
-#define diffMedia { { 0.f, 0.f, 0.f }, 0.f, 1., 0., 1. }
-#define objectMedia { { .7f, .5f, .3f }, 3., 1.3, 1., .9 }
+#define diffMedia { { 0.f, 0.f, 0.f }, 0.f, 1., 0., 1.0 }
+#define objectMedia { { .7f, .1f, .1f }, 10., 1., 1., .0 }
 
 #define emptySrc { { 0, 0, 0 }, 0. }
 
 __device__ Sphere spheres[] = {
 	{
-		20.f, { 0.f, 0.2f, 0.f },
-		clearMedia,
-		//{ { 0.4f, .4f, .9f }, .1f, 1., 1., 1. },
-		{ { 0, .0, -1.0 }, 3., .5 }
+		20.f, { 0.f, 0.f, 0.f },
+		superMedia,
+		superSrc
 	}, 
-	{
+	/*{
 		.3f, { -.5f, 1.4f, 0.f },
 		mirrorMedia,
 		{ { .0, -1.0, 0.0 }, 70., .3 },
+	},*/
+	{
+		.4f, { .0f, -0.5f, -1.f },
+		objectMedia,
+		emptySrc
 	},
 	{
-		.4f, { -1.6f, -0.6f, -.0f },
+		.4f, { -.5f, -0.5f, -.0f },
 		mirrorMedia,
 		emptySrc
 	},
 	{
-		.4f, { 1.6f, -0.6f, -.0f },
+		.4f, { .5f, -0.5f, -.0f },
 		diffMedia,
 		emptySrc
 	},
 	{
-		1000.f, { .0f, -1001.f, -.0f },
-		{ { 0.f, 0.f, 0.f }, 100.f, 3., .5, .5 },
+		10000.f, { .0f, -10001.f, .0f },
+		{ { 0.f, 1.f, 0.f }, 100.f, 3., .5, .5 },
 		emptySrc
-	}, { 0.150197f, { 4.051436f, -0.354844f, 2.572216f }, bubbleMedia, emptySrc },
+	}, 
+	/*{ 0.150197f, { 4.051436f, -0.354844f, 2.572216f }, bubbleMedia, emptySrc },
 	{ 0.108043f, { -2.679223f, 0.591952f, -3.592339f }, bubbleMedia, emptySrc },
 	{ 0.096722f, { 0.277323f, 0.245143f, 2.164384f }, bubbleMedia, emptySrc },
 	{ 0.196916f, { -2.734828f, -0.219079f, 1.324087f }, bubbleMedia, emptySrc },
@@ -174,7 +180,7 @@ __device__ Sphere spheres[] = {
 	{ 0.151216f, { 0.307553f, 0.383289f, 0.891747f }, bubbleMedia, emptySrc },
 	{ 0.188534f, { 3.344535f, -0.637103f, -1.430236f }, bubbleMedia, emptySrc },
 	{ 0.114809f, { 3.784460f, -0.049071f, -2.955938f }, bubbleMedia, emptySrc },
-	{ 0.2f, { -2.6f, 1.7f, -4.2f }, bubbleMedia, emptySrc },
+	{ 0.2f, { -2.6f, 1.7f, -4.2f }, bubbleMedia, emptySrc },*/
 };
 
 // Create OpenGL BGR value for assignment in OpenGL VBO buffer
@@ -307,7 +313,7 @@ __device__ bool BVH_IntersectTriangles(
 			for (unsigned i = data.w; i < data.w + (data.x & 0x7fffffff); i++) {
 				// fetch the index of the current triangle
 				int idx = tex1Dfetch(g_triIdxListTexture, i).x;
-				// check if triangle is the same as the one intersected by previous ray
+				// check if triangle is the same as the one intersected by previous ray	
 				// to avoid self-reflections/refractions
 				if (avoidSelf == idx)
 					continue; 
@@ -431,12 +437,12 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 		Media *new_media = nullptr, *old_media = cur.media;
 		
 		int pBestTriIdx;
-		if (!BVH_IntersectTriangles(
+		/*if (!BVH_IntersectTriangles(
 			cudaBVHindexesOrTrilists, rayorig, raydir, avoidSelf,
 			pBestTriIdx, neworig, hit_dist, cudaBVHlimits,
 			cudaTriangleIntersectionData, cudaTriIdxList, boxnormal)) {
 			hit_dist = 1e10;
-		}
+		}*/
 
 
 		float d;
@@ -477,19 +483,28 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 		
 		float optical_dist = exp(-old_media->mu * hit_dist);
 		if (src && src->pow > 0) {
-			Vector3Df src_dir = src->dir;
+			Vector3Df src_dir = src->dir,
+				hit_orig = neworig;
+			hit_orig.normalize();
+			
 			src_dir.normalize();
-			if (new_time > 100) {
-				ret += mask * (optical_dist * src->pow * exp(-(src_dir - normal).length() / src->wide))
-					//				mask * (sqrt(10 * abs(time - 105)) * exp((2.f - (w1 - neworig).length()) / abs(time - 105) * 10. - abs(time - 100.)))
-					//mask * (60. * exp((2.f - (w1 - neworig).length() * 3.)
-					//- abs(time - 100.) * 2.
-					//))
-					;
+#define TIME 100.
+			if ((src_dir - hit_orig).length() < src->wide && sqr(new_time - TIME) < .5) {
+				ret +=
+					mask *
+					optical_dist *
+					src->pow;
+
+				/*				exp(-(src_dir - normal).length() / src->wide) *
+				exp(-sqr(new_time - TIME));
+				*/				//				mask * (sqrt(10 * abs(time - 105)) * exp((2.f - (w1 - neworig).length()) / abs(time - 105) * 10. - abs(time - 100.)))
+				//mask * (60. * exp((2.f - (w1 - neworig).length() * 3.)
+				//- abs(time - 100.) * 2.
+				//));
 			}
 		}
 		
-		{
+		{	
 #define BRANCHS 0
 			bool coin;
 
@@ -524,7 +539,7 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 					Vector3Df rdir = raydir + normal * 2.0f;
 					rdir.normalize();
 
-					Vector3Df spec_lambda(.2, .2, .7);
+					Vector3Df spec_lambda(.7, .1, .1);
 					if (sphere_id > 4) {
 						spec_lambda = Vector3Df(1., 1., 1.);
 					}
@@ -564,7 +579,7 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 					}
 				}
 				
-				Vector3Df difLambda(.7, .2, .2);
+				Vector3Df difLambda(.7, .1, .1);
 #if BRANCHB
 				new_mask *= (1- spec_frac) / spec_frac;
 #endif
@@ -585,9 +600,9 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 					Vector3Df back_norm = normal * -1;
 					rand_dir(randstate, &tdir, &back_norm, true);
 					stack[top++] = PhasePoint(
-						new_time, 
-						neworig, tdir, 
-						cur.n + 1, 
+						new_time,
+						neworig, tdir,
+						cur.n + 1,
 						difLambda * new_mask * (BRANCHB ? ((1 - spec_frac) * dif_refl_frac) : 1.f),
 						new_media
 					);

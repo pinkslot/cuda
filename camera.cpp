@@ -21,13 +21,13 @@
 
 InteractiveCamera::InteractiveCamera()
 {
-	time = 105.;
-	centerPosition = Vector3Df(-.5, 0, 0);
+	time = 117.;
+	centerPosition = Vector3Df(-.0, 0, 0);
 	yaw = 0;
 	pitch = 0.2;
-	radius = 3.5;
-	apertureRadius = 0.01; // 0.04
-	focalDistance = 3.5f;
+	radius = 3.;
+	apertureRadius = 0.03; // 0.04
+	focalDistance = 5.5f;
 
 	resolution = make_float2(512, 512);  // width, height
 	fov = make_float2(40, 40);

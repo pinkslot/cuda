@@ -30,8 +30,8 @@
 #include <vector_functions.h>
 #include "device_launch_parameters.h"
 #include "cutil_math.h"
-#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{55ED2DCF-EE35-477A-A8FD-F0ABB11EC0BF}\common\inc\GL\glew.h"
-#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{55ED2DCF-EE35-477A-A8FD-F0ABB11EC0BF}\common\inc\GL\freeglut.h"
+#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{D3FD22D5-4D82-406C-ADC6-962E5889C52D}\common\inc\GL\glew.h"
+#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{D3FD22D5-4D82-406C-ADC6-962E5889C52D}\common\inc\GL\freeglut.h"
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 #include <curand.h>
@@ -110,19 +110,24 @@ struct Sphere {
 #define	INIT_SPHERE(...) { ##__VA_ARGS__,  },
 
 #define clearMedia { { 0.f, 0.f, 0.f }, 0.f, 1., 1., 1. }
-#define superMedia { { .3f, .3f, .8f }, .01f, 1., 1., 1. }
-#define superSrc { { 0, .0, -1.0 }, 70., .5 }
+#define superMedia { { .6f, .6f, .9f }, .001f, 1., 1.0, .0 }
+#define superSrc { { 1, .001, 0.0 }, 5000., 10. }
 #define glassMedia { { 0.f, 0.f, 0.f }, 0.f, 1.3, 1., 1. }
 #define bubbleMedia { { 0.f, 0.f, 0.f }, 0.f, 1.1, 1., 1. }
-#define mirrorMedia { { 0.f, 0.f, 0.f }, 0.f, .001, 1., 1. }
+#define mirrorMedia { { 0.f, 0.f, 0.f }, 0.f, 5, 1., 0. }
+#define transpMedia { { 0.f, 0.f, 0.f }, 0.f, .001, 0., 0. }
 #define diffMedia { { 0.f, 0.f, 0.f }, 0.f, 1., 0., 1.0 }
-#define objectMedia { { .7f, .1f, .1f }, 10., 1., 1., .0 }
+#define scatMedia { { .1f, .7f, .8f }, 2.3, 1., 1.0, .0 }
+#define objectMedia { { .1f, .7f, .8f }, 2.3, 1.3, 0.5, 1. }
+#define TIME 100.
+#define TIME_WIDTH 6.
 
 #define emptySrc { { 0, 0, 0 }, 0. }
+#define RAD 440.f
 
 __device__ Sphere spheres[] = {
-	{
-		20.f, { 0.f, 0.f, 0.f },
+	{ 
+		RAD, { 20.f - RAD, 0.f, 0.0f },
 		superMedia,
 		superSrc
 	}, 
@@ -130,8 +135,7 @@ __device__ Sphere spheres[] = {
 		.3f, { -.5f, 1.4f, 0.f },
 		mirrorMedia,
 		{ { .0, -1.0, 0.0 }, 70., .3 },
-	},*/
-	{
+	},{
 		.4f, { .0f, -0.5f, -1.f },
 		objectMedia,
 		emptySrc
@@ -145,42 +149,21 @@ __device__ Sphere spheres[] = {
 		.4f, { .5f, -0.5f, -.0f },
 		diffMedia,
 		emptySrc
-	},
+	},*/
 	{
-		10000.f, { .0f, -10001.f, .0f },
-		{ { 0.f, 1.f, 0.f }, 100.f, 3., .5, .5 },
+		1000000.f, { .0f, -1000001.f, .0f },
+		diffMedia,
 		emptySrc
-	}, 
-	/*{ 0.150197f, { 4.051436f, -0.354844f, 2.572216f }, bubbleMedia, emptySrc },
-	{ 0.108043f, { -2.679223f, 0.591952f, -3.592339f }, bubbleMedia, emptySrc },
-	{ 0.096722f, { 0.277323f, 0.245143f, 2.164384f }, bubbleMedia, emptySrc },
-	{ 0.196916f, { -2.734828f, -0.219079f, 1.324087f }, bubbleMedia, emptySrc },
-	{ 0.171792f, { -0.102131f, 0.176995f, -3.430057f }, bubbleMedia, emptySrc },
-	{ 0.127274f, { 2.585430f, -0.088936f, 1.648117f }, bubbleMedia, emptySrc },
-	{ 0.199331f, { 3.410875f, -0.687568f, 0.637097f }, bubbleMedia, emptySrc },
-	{ 0.144255f, { -1.486807f, 0.429140f, 0.926982f }, bubbleMedia, emptySrc },
-	{ 0.166730f, { 0.724614f, 0.869582f, -0.774319f }, bubbleMedia, emptySrc },
-	{ 0.102802f, { -0.573656f, 0.815830f, -3.406304f }, bubbleMedia, emptySrc },
-	{ 0.063062f, { 2.580979f, -0.030809f, -0.193700f }, bubbleMedia, emptySrc },
-	{ 0.205056f, { 1.615810f, 0.001040f, -1.699259f }, bubbleMedia, emptySrc },
-	{ 0.176808f, { 0.082913f, 0.096907f, 0.662901f }, bubbleMedia, emptySrc },
-	{ 0.081190f, { -1.651867f, -0.455309f, -2.180360f }, bubbleMedia, emptySrc },
-	{ 0.091264f, { -2.061154f, 0.349094f, 0.111864f }, bubbleMedia, emptySrc },
-	{ 0.190825f, { 4.927261f, -0.463230f, 1.190329f }, bubbleMedia, emptySrc },
-	{ 0.084226f, { 0.501802f, 0.874899f, 1.332683f }, bubbleMedia, emptySrc },
-	{ 0.159762f, { 1.764833f, 0.569550f, 3.612862f }, bubbleMedia, emptySrc },
-	{ 0.134343f, { 1.398531f, 0.378849f, 1.609834f }, bubbleMedia, emptySrc },
-	{ 0.109045f, { 3.474631f, -0.108363f, 0.596017f }, bubbleMedia, emptySrc },
-	{ 0.168301f, { 0.483231f, -0.496640f, -2.607018f }, bubbleMedia, emptySrc },
-	{ 0.088933f, { 2.051002f, 0.505545f, 2.977686f }, bubbleMedia, emptySrc },
-	{ 0.134614f, { -1.407023f, 0.266364f, 0.709070f }, bubbleMedia, emptySrc },
-	{ 0.079449f, { 2.640496f, 0.731989f, 0.205749f }, bubbleMedia, emptySrc },
-	{ 0.165761f, { 2.145903f, 0.474652f, -0.054377f }, bubbleMedia, emptySrc },
-	{ 0.087311f, { 1.174367f, 0.750548f, -2.368864f }, bubbleMedia, emptySrc },
-	{ 0.151216f, { 0.307553f, 0.383289f, 0.891747f }, bubbleMedia, emptySrc },
-	{ 0.188534f, { 3.344535f, -0.637103f, -1.430236f }, bubbleMedia, emptySrc },
-	{ 0.114809f, { 3.784460f, -0.049071f, -2.955938f }, bubbleMedia, emptySrc },
-	{ 0.2f, { -2.6f, 1.7f, -4.2f }, bubbleMedia, emptySrc },*/
+	},
+//	{ .7f, { 0, -1 + .7, 0 }, objectMedia, emptySrc },
+	{ .5f, { -1.051436f, -1 + .5, .772216f }, diffMedia, emptySrc },
+	{ .65f, { 1.679223f, -1 + .65, 1.592339f }, scatMedia, emptySrc },
+	{ 0.4f, { -2.f, -1 + .4, -1.430057f }, scatMedia, emptySrc },
+	{ 0.5f, { -0.102131f, -1 + .5, -1.430057f }, mirrorMedia, emptySrc },
+	{ 0.4f, { 1.085430f, -1 + .4, -.848117f }, diffMedia, emptySrc },
+	{ .5f, { 1.50875f, -1 + .5, -1.837097f }, mirrorMedia, emptySrc },
+	
+
 };
 
 // Create OpenGL BGR value for assignment in OpenGL VBO buffer
@@ -363,8 +346,7 @@ __device__ bool BVH_IntersectTriangles(
 	return pBestTriIdx != -1;
 }
 
-template<class T>
-__device__ void printv(T &arr, char mark = ' ') {
+__device__ void printv(Vector3Df &arr, char mark = ' ') {
 	printf("%f, %f, %f %c%c%c\n", arr.x, arr.y, arr.z, mark, mark, mark);
 }
 
@@ -389,12 +371,26 @@ struct PhasePoint {
 	__device__ PhasePoint() {}
 };
 
-__device__ void rand_dir(curandState *randstate, Vector3Df *new_dir, Vector3Df *old_dir = nullptr, bool only_pos = false) {
-	float indic = cos(curand_uniform(randstate) * M_PI * (only_pos ? .5 : 1.)),
-		phi = curand_uniform(randstate) * 2 * M_PI,
+__device__ void rand_dir(
+	curandState *randstate, 
+	Vector3Df *new_dir, 
+	Vector3Df *old_dir = nullptr, 
+	bool only_pos = false,
+	bool custom_indic = false,
+	float indic = -1)
+{
+	if (!custom_indic) {
+		indic = curand_uniform(randstate);
+		if (!only_pos) {
+			indic = indic * 2. - 1.;
+		}
+	}
+
+	float phi = curand_uniform(randstate) * 2 * M_PI,
 		sin_ind = sqrt(1 - indic * indic);
-	
+
 	*new_dir = Vector3Df(cos(phi) * sin_ind, sin(phi) * sin_ind, indic);
+
 	if (!old_dir) {
 		return;
 	}
@@ -402,25 +398,124 @@ __device__ void rand_dir(curandState *randstate, Vector3Df *new_dir, Vector3Df *
 	float x1 = old_dir->x, x2 = old_dir->y, x3 = old_dir->z;
 	if (abs(x3 - 1) > 1e-5) {
 		Vector3Df rand_dir = *new_dir;
-		float denom = sqrt(1 - x3);
-		new_dir->x = dot(Vector3Df(x1 * x3 / denom, -x2 / denom, x1), rand_dir);
-		new_dir->y = dot(Vector3Df(x2 * x3 / denom, x1 / denom, x2), rand_dir);
-		new_dir->z = dot(Vector3Df(-denom, 0, x3), rand_dir);
+		float denom = sqrt(1 - sqr(x3));
+
+		new_dir->x = dot(Vector3Df(x1 * x3 / denom,		-x2 / denom,	x1), rand_dir);
+		new_dir->y = dot(Vector3Df(x2 * x3 / denom,		x1 / denom,		x2), rand_dir);
+		new_dir->z = dot(Vector3Df(-denom,				0,				x3), rand_dir);
 	}
+	new_dir->normalize();
+}
+
+__device__ float normal_dist(float x, float a, float b) {
+	return exp(-sqr(x - a) / 2. / sqr(b)) / b / sqrt(2. * M_PI);
+}
+
+__device__ float a2indic(float a, float neworig_len)
+{
+	float b = RAD - neworig_len,
+		sina2 = a / 2. / RAD,
+		sqra = a * a;
+	return sqrt(1 - sqra * (1. - sina2 * sina2) / (sqra + b*b - 2. * a * b * sina2));
+}
+
+__device__ float angle_diff(Vector3Df &a, Vector3Df &b) {
+	return acos(min(1., dot(a, b) / a.length() / b.length()));
 }
 
 
-__device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vector3Df raydir, int avoidSelf, float time,
-	Triangle *pTriangles, int* cudaBVHindexesOrTrilists, float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList)
-{
-	// debuging purpose
-	//unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
-	//unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
+__device__ void rand_dir_to_src(
+	curandState *randstate,
+	float wide,
+	Vector3Df *newdir,
+	float *weight,
+	bool useOpt,
+	float neworig_len,
+	Vector3Df *old_orig,
+	Vector3Df *src_orig,
+	bool print = false
+) {
+	if (useOpt) {
+		wide *= 1.5;
+		Vector3Df
+			src_normal = Vector3Df(-1., 0., 0.),
+			to_src = *src_orig - *old_orig,
+			new_orig;
+		float norm_sample = curand_normal(randstate) * wide,
+			uni_sample = curand_uniform(randstate) * 2. * M_PI;
+		new_orig = *src_orig + Vector3Df(0., cos(uni_sample), sin(uni_sample)) * norm_sample;
+		*newdir = new_orig - *old_orig;
+		newdir->normalize();
 
+		// weight calc
+		float delta = .01,
+			uni_sample_delta = uni_sample + delta;
+		Vector3Df norm_delta_orig = *src_orig + Vector3Df(0., cos(uni_sample), sin(uni_sample)) * (norm_sample + delta),
+			norm_delta_dir = norm_delta_orig - *old_orig,	
+			uni_delta_vect = *src_orig + Vector3Df(0., cos(uni_sample_delta), sin(uni_sample_delta)) * norm_sample - new_orig;
+		norm_delta_dir.normalize();
+
+		Vector3Df 
+			phi_dir = norm_delta_orig - new_orig,
+			psi_dir = cross(norm_delta_dir, *newdir);
+		phi_dir.normalize();
+		psi_dir.normalize();
+		Vector3Df 
+			uni_phi_delta_vect = phi_dir * dot(phi_dir, uni_delta_vect),
+			uni_psi_delta_vect = psi_dir * dot(psi_dir, uni_delta_vect),
+			uni_phi_delta_dir = uni_phi_delta_vect + new_orig - *old_orig,
+			uni_psi_delta_dir = uni_psi_delta_vect + new_orig - *old_orig;
+		
+		uni_phi_delta_dir.normalize();
+		uni_psi_delta_dir.normalize();
+
+		float norm_phi_delta = angle_diff(norm_delta_dir, *newdir),
+			uni_phi_delta = angle_diff(uni_phi_delta_dir, *newdir),
+			uni_psi_delta = angle_diff(uni_psi_delta_dir, *newdir),
+			phi_prob = normal_dist(norm_sample, 0., wide) * delta / norm_phi_delta,
+			psi_prob = (delta / 2. / M_PI - uni_phi_delta * phi_prob) / uni_psi_delta;
+
+		if (norm_phi_delta < 1e-5 || uni_psi_delta < 1e-5 || phi_prob < .03 || phi_prob < .03) {
+			*weight = 0.;
+			return;
+		}
+		*weight = 1. / 2. / M_PI / phi_prob / psi_prob;
+
+/*		if (print) {
+			printv(new_orig, '-');
+			//printf("%f\n", phi_prob, psi_prob, (delta / 2. / M_PI) / uni_psi_delta);
+		}*/
+
+		return;
+	}
+	else {
+		*weight = 1.;
+		rand_dir(randstate, newdir);
+	}
+/*	float
+		a = abs(curand_normal(randstate))* wide,
+		rand_indic = a2indic(a, neworig_len);
+
+	b.normalize();
+	*weight = 1. / 4. / RAD / normal_dist(a, 0, wide);
+	rand_dir(randstate, newdir, &b, false, true, rand_indic);
+*/}
+
+__device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vector3Df raydir, int avoidSelf, float time,
+	Triangle *pTriangles, int* cudaBVHindexesOrTrilists, float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList, 
+	bool useOpt)
+{
+	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
+	unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
+	if (x == 251 && y == 251) {
+		return Vector3Df(1., 0., 0.);
+	}
 	avoidSelf = -1; // doesn't work because of stack emulation, should be included to PhasePoint
 	Vector3Df ret;
 #define N 10
 	Media _objectMedia = objectMedia, *mainMedia = &spheres[0].med;
+	Source *mainSrc = &spheres[0].src;
+	Vector3Df SRC_ORIG = spheres[0].pos + spheres[0].src.dir * spheres[0].rad;
 	PhasePoint stack[(N + 1) * 3] = { PhasePoint(time, rayorig, raydir, mainMedia) };
 	int top = 1;
 	while (top){
@@ -437,18 +532,17 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 		Media *new_media = nullptr, *old_media = cur.media;
 		
 		int pBestTriIdx;
-		/*if (!BVH_IntersectTriangles(
+		if (!BVH_IntersectTriangles(
 			cudaBVHindexesOrTrilists, rayorig, raydir, avoidSelf,
 			pBestTriIdx, neworig, hit_dist, cudaBVHlimits,
 			cudaTriangleIntersectionData, cudaTriIdxList, boxnormal)) {
 			hit_dist = 1e10;
-		}*/
-
+		}
 
 		float d;
 		int sphere_id = -1;
 		for (int i = sizeof(spheres) / sizeof(Sphere); i--;) {
-			if ((d = spheres[i].intersect(Ray(rayorig, raydir))) > 0 && d < hit_dist){
+			if ((d = spheres[i].intersect(Ray(rayorig, raydir))) > 0 && d < hit_dist) {
 				hit_dist = d; sphere_id = i;
 			}
 		}
@@ -460,8 +554,7 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 		// intersect all spheres in the scene
 		Source *src = nullptr;
 		neworig = rayorig + raydir * hit_dist;
-		float new_time = cur.time - hit_dist * old_media->k;
-
+		float new_time = cur.time - hit_dist * old_media->k; 
 		if (sphere_id >= 0) {
 			Sphere &closest = spheres[sphere_id];
 			normal = neworig - closest.pos;
@@ -483,38 +576,44 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 		
 		float optical_dist = exp(-old_media->mu * hit_dist);
 		if (src && src->pow > 0) {
-			Vector3Df src_dir = src->dir,
+			Vector3Df
 				hit_orig = neworig;
-			hit_orig.normalize();
-			
-			src_dir.normalize();
-#define TIME 100.
-			if ((src_dir - hit_orig).length() < src->wide && sqr(new_time - TIME) < .5) {
-				ret +=
-					mask *
-					optical_dist *
-					src->pow;
 
-				/*				exp(-(src_dir - normal).length() / src->wide) *
-				exp(-sqr(new_time - TIME));
-				*/				//				mask * (sqrt(10 * abs(time - 105)) * exp((2.f - (w1 - neworig).length()) / abs(time - 105) * 10. - abs(time - 100.)))
-				//mask * (60. * exp((2.f - (w1 - neworig).length() * 3.)
-				//- abs(time - 100.) * 2.
-				//));
-			}
+
+			// colorize src
+			// mask *= Vector3Df(dift * 5., 0, (2. - dift) * 5.);
+
+
+
+			float dim_dist = (SRC_ORIG - hit_orig).lengthsq(),
+				time_dist = sqr(new_time - TIME);
+			ret += 
+					mask
+					* optical_dist
+					* src->pow
+					* normal_dist(dim_dist, 0., src->wide)
+					* exp(-time_dist / TIME_WIDTH)
+					;
 		}
 		
-		{	
+		{
 #define BRANCHS 0
 			bool coin;
-
 			if (BRANCHS || (coin = (old_media->mu > NUDGE_FACTOR && (curand_uniform(randstate) > optical_dist)))) {
 				// scattering
-				Vector3Df newdir;
-				rand_dir(randstate, &newdir);
-				float dist = log((optical_dist - 1) * curand_uniform(randstate) + 1) / (-old_media->mu);
-				neworig = rayorig + raydir * dist;
-				stack[top++] = PhasePoint(cur.time - dist, neworig, newdir, cur.n + 1, Vector3Df(old_media->lambda) * mask
+				Vector3Df a = SRC_ORIG - rayorig, newdir;
+				float
+					lengthA = a.length(),
+					weight = 1.,
+					dist = log((optical_dist - 1) * curand_uniform(randstate) + 1) / (-old_media->mu);
+				
+				Vector3Df scat_neworig = rayorig + raydir * dist;
+				rand_dir_to_src(randstate, mainSrc->wide, &newdir, &weight, useOpt, scat_neworig.length(), &scat_neworig, &SRC_ORIG);
+
+				weight = min(100., weight);
+				stack[top++] = PhasePoint(cur.time - dist * old_media->k, 
+					scat_neworig, newdir, cur.n + 1,
+					Vector3Df(old_media->lambda) * mask * weight
 #if BRANCHS
 					* (1.f - optical_dist)
 #endif					
@@ -530,8 +629,10 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 				new_mask *= optical_dist;
 #endif
 #define MEDIA_K 1.f  // Index of Refraction air
-				float fcoin = curand_uniform(randstate);
 #define BRANCHB 0
+				float fcoin = curand_uniform(randstate);
+				unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
+				unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 				if (BRANCHB || fcoin < spec_frac) {
 					float k = old_media->k / new_media->k;  // IOR ratio of refractive materials
 					float ddn = dot(raydir, normal);
@@ -539,10 +640,7 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 					Vector3Df rdir = raydir + normal * 2.0f;
 					rdir.normalize();
 
-					Vector3Df spec_lambda(.7, .1, .1);
-					if (sphere_id > 4) {
-						spec_lambda = Vector3Df(1., 1., 1.);
-					}
+					Vector3Df spec_lambda(.1, .9, .1);
 					if (cos2t < 0.0f) // total internal reflection
 					{
 						stack[top++] = PhasePoint(new_time, neworig, rdir, cur.n + 1, spec_lambda * new_mask, old_media);
@@ -557,7 +655,6 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 #if BRANCHB
 						new_mask *= spec_frac;
 #endif
-		
 						if (BRANCHB || fcoin > R) {
 							stack[top++] = PhasePoint(
 								new_time,
@@ -578,35 +675,48 @@ __device__ Vector3Df path_trace(curandState *randstate, Vector3Df rayorig, Vecto
 						}
 					}
 				}
-				
-				Vector3Df difLambda(.7, .1, .1);
+				if (BRANCHB || fcoin > spec_frac) {
+					Vector3Df difLambda(.7, .2, .2);
 #if BRANCHB
-				new_mask *= (1- spec_frac) / spec_frac;
+					new_mask *= (1- spec_frac) / spec_frac;
 #endif
-				if (BRANCHB || fcoin > spec_frac && fcoin < spec_frac + (1 - spec_frac) * dif_refl_frac) {
-					Vector3Df rdir;
-					rand_dir(randstate, &rdir, &normal, true);
-					stack[top++] = PhasePoint(
-						new_time, 
-						neworig, rdir, 
-						cur.n + 1, 
-						difLambda * new_mask * (BRANCHB ? ((1 - spec_frac) * (1 - dif_refl_frac)) : 1.f),
-						old_media
-					);
-				}
+					float weight;
+					Vector3Df back_norm = normal * -1;
 
+					Vector3Df rdir;
+					rand_dir_to_src(randstate, mainSrc->wide, &rdir, &weight, useOpt, neworig.length(), &neworig, &SRC_ORIG,
+					x == 250 && y == 250
+					);
+					weight = min(100., weight);
+					weight *= abs(dot(rdir, normal)) * dot(rdir, normal) > 0 ? dif_refl_frac : (1. - dif_refl_frac);
+
+					new_mask *= max(0., weight);
+
+					stack[top++] = PhasePoint(
+						new_time,
+						neworig, rdir,
+						cur.n + 1,
+						difLambda * new_mask * (BRANCHB ? ((1 - spec_frac) * (1 - dif_refl_frac)) : 1.f) * weight,
+						old_media
+						);
+				}
+				/*
 				if (BRANCHB || fcoin > spec_frac + (1 - spec_frac) * dif_refl_frac) {
 					Vector3Df tdir;
-					Vector3Df back_norm = normal * -1;
-					rand_dir(randstate, &tdir, &back_norm, true);
+					rand_dir_to_src(randstate, mainSrc->wide, SRC_ORIG - neworig, &tdir, &weight, &back_norm, useOpt);
+					weight = min(10., weight);
+					new_mask *= max(0., dot(tdir, back_norm));
+
 					stack[top++] = PhasePoint(
 						new_time,
 						neworig, tdir,
 						cur.n + 1,
-						difLambda * new_mask * (BRANCHB ? ((1 - spec_frac) * dif_refl_frac) : 1.f),
-						new_media
+						difLambda * new_mask * (BRANCHB ? ((1 - spec_frac) * dif_refl_frac) : 1.f) * weight,
+						old_media
 					);
 				}
+
+				*/
 			}
 		}
 	}
@@ -703,7 +813,7 @@ __global__ void CoreLoopPathTracingKernel(Vector3Df* output, Vector3Df* accumbuf
 		Vector3Df originInWorldSpace = aperturePoint;
 
 		finalcol += path_trace(&randState, originInWorldSpace, rayInWorldSpace, -1, cudaRendercam->time, pTriangles,
-			cudaBVHindexesOrTrilists, cudaBVHlimits, cudaTriangleIntersectionData, cudaTriIdxList) * (1.0f/samps);
+			cudaBVHindexesOrTrilists, cudaBVHlimits, cudaTriangleIntersectionData, cudaTriIdxList, cudaRendercam->useOpt) * (1.0f/samps);
 	}       
 
 	// add pixel colour to accumulation buffer (accumulates all samples) 

@@ -24,7 +24,7 @@
 #include "linear_algebra.h"
 #include <cuda_runtime.h>
 
-#define M_PI 3.14156265
+#define M_PI 3.1415926535
 #define PI_OVER_TWO 1.5707963267948966192313216916397514420985
 
 // Camera struct, used to store interactive camera data, copied to the GPU and used by CUDA for each frame
@@ -37,6 +37,7 @@ struct Camera {
 	float apertureRadius;
 	float focalDistance;
 	float time;
+	bool useOpt;
 };
 
 // class for interactive camera object, updated on the CPU for each frame and copied into Camera struct
@@ -60,6 +61,7 @@ private:
 	void fixFocalDistance();
 
 public:
+	bool useOpt;
 	float get_time() { return time; }
 	InteractiveCamera();
 	virtual ~InteractiveCamera();

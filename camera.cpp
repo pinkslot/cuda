@@ -21,13 +21,14 @@
 
 InteractiveCamera::InteractiveCamera()
 {
-	time = 117.;
+	time = 126.2;
+	useOpt = true;
 	centerPosition = Vector3Df(-.0, 0, 0);
-	yaw = 0;
+	yaw = .6; // radians
 	pitch = 0.2;
-	radius = 3.;
+	radius = 6.5;
 	apertureRadius = 0.03; // 0.04
-	focalDistance = 5.5f;
+	focalDistance = 6.5f;
 
 	resolution = make_float2(512, 512);  // width, height
 	fov = make_float2(40, 40);
@@ -136,6 +137,7 @@ void InteractiveCamera::buildRenderCamera(Camera* renderCamera){
 	renderCamera->apertureRadius = apertureRadius;
 	renderCamera->focalDistance = focalDistance;
 	renderCamera->time = time;
+	renderCamera->useOpt = useOpt;
 }
 
 float mod(float x, float y) { // Does this account for -y ???

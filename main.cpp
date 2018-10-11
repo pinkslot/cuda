@@ -54,37 +54,6 @@ InteractiveCamera* interactiveCamera = NULL;
 
 bool buffer_reset = false;
 
-void Timer(int obsolete) {
-	static time_t t1 = clock();
-	int msec = (clock() - t1) / CLOCKS_PER_SEC;
-	static int counter = 0, i = 1;
-	counter = !counter ? msec : counter;
-	if (msec >= 30 * 60 * i) {
-		counter *= 2;
-		i++;
-		printf("%dth file in %d seconds\n", i, msec);
-
-		// Make the BYTE array, factor of 3 because it's RBG.
-		GLubyte* pixels = new GLubyte[3 * width * height];
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-
-		// Convert to FreeImage format & save to file
-		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
-		char fname[100];
-		sprintf_s(fname, "after-fix-cos-%d.png", i);
-		FreeImage_Save(FIF_PNG, image, fname, 0);
-		
-		//interactiveCamera->tick(1.); buffer_reset = true;
-		// Free resources
-		FreeImage_Unload(image);
-		delete[] pixels;
-	}
-
-	glutPostRedisplay();
-	glutTimerFunc(30, Timer, 0);
-}
-
 __device__ float timer = 0.0f;
 
 // image buffer storing accumulated pixel samples
@@ -122,6 +91,52 @@ void initCamera()
 
 	interactiveCamera->setResolution(width, height);
 	interactiveCamera->setFOVX(45);
+}
+
+void Timer(int obsolete) {
+	static time_t t1 = clock();
+	int msec = (clock() - t1) / CLOCKS_PER_SEC;
+	static int counter = 4, i = 1;
+//	counter = !counter ? msec : counter;
+	if (msec >= counter) {
+		printf("%dth file in %d seconds\n", i, msec);
+		counter *= 2;
+//		interactiveCamera->tick(1.7); buffer_reset = true;
+
+		// Make the BYTE array, factor of 3 because it's RBG.
+		GLubyte* pixels = new GLubyte[3 * width * height];
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
+
+		// Convert to FreeImage format & save to file
+		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
+		char fname[100];
+		sprintf_s(fname, "%s%02d.png", interactiveCamera->useOpt ? "with_opt" : "without_opt", i);
+		FreeImage_Save(FIF_PNG, image, fname, 0);
+
+
+		if (i == 14) {
+			counter = 4;
+			t1 = clock();
+			interactiveCamera->useOpt ^= true;
+			buffer_reset = true;
+			/*			if (i == 70) {
+				initCamera();
+			}
+			else {
+				interactiveCamera->tick(1.5);
+			}
+			*/
+		}
+		FreeImage_Unload(image);
+		delete[] pixels;
+
+		//interactiveCamera->tick(.3); buffer_reset = true;
+		i++;
+	}
+
+	glutPostRedisplay();
+	glutTimerFunc(30, Timer, 0);
 }
 
 // create OpenGL vertex buffer object for CUDA to store calculated pixels
@@ -194,9 +209,9 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	
 	case(27) : exit(0);
 	case(' ') : initCamera(); buffer_reset = true; break;
-	case('5') : interactiveCamera->tick(1.); buffer_reset = true; 
+	case('5') : interactiveCamera->tick(.2); buffer_reset = true; 
 		printf("time=%f\n", interactiveCamera->get_time());  break;
-	case('4') : interactiveCamera->tick(-1.); buffer_reset = true;
+	case('4') : interactiveCamera->tick(-.2); buffer_reset = true;
 		printf("time=%f\n", interactiveCamera->get_time());  break;
 	case('a') : interactiveCamera->strafe(-0.05f); buffer_reset = true; break;
 	case('d') : interactiveCamera->strafe(0.05f); buffer_reset = true; break;
@@ -208,6 +223,9 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	case('h') : interactiveCamera->changeApertureDiameter(-0.1); buffer_reset = true; break;
 	case('t') : interactiveCamera->changeFocalDistance(0.1); buffer_reset = true; break;
 	case('y') : interactiveCamera->changeFocalDistance(-0.1); buffer_reset = true; break;
+	case('o') : interactiveCamera->useOpt = !interactiveCamera->useOpt; 
+		printf("optimization %s\n", interactiveCamera->useOpt ? "ON" : "OFF");
+		buffer_reset = true; break;
 	}
 }
 
@@ -281,18 +299,21 @@ void mouseWheel(int button, int dir, int x, int y)
 void prepCUDAscene(){
 
 	// specify scene filename 
-	//const char* scenefile = "data/teapot.ply";  // teapot.ply, big_atc.ply
-	const char* scenefile = "data/happy.ply";
+	//const char* scenefile = "data/teapot.ply";  
+	//teapot.ply, big_atc.ply
+	//const char* scenefile = "data/happy.ply";
 	//const char* scenefile = "data/teapot.ply";
 	//const char* scenefile = "data/shark.ply";
 	//const char* scenefile = "data/chopper.ply";
 	//const char* scenefile = "data/dodecahedron.ply";
 	//const char* scenefile = "data/egret.ply";
-	//const char* scenefile = "data/SIMPLE.PLY";
+	//const char* scenefile = "data/cow.ply";
+	//const char* scenefile = "data/octa.ply";
+	//const char* scenefile = "data/SIMPLE.ply";
 	//const char* scenefile = "data/bun_zipper_res2.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/bun_zipper.ply";  // teapot.ply, big_atc.ply
-	//const char* scenefile = "data/happy.ply";  // teapot.ply, big_atc.ply
-	// const char* scenefile = "data/dragon_vrip_res4.ply";  // teapot.ply, big_atc.ply
+	const char* scenefile = "data/happy.ply";  // teapot.ply, big_atc.ply
+	//const char* scenefile = "data/dragon_vrip_res4.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/happy_vrip.ply";  // teapot.ply, big_atc.ply
 
 	// load scene

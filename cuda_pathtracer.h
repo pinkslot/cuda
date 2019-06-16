@@ -29,7 +29,7 @@
 #include <ctime>
  
 #define BVH_STACK_SIZE 32
-#define width 512 // screenwidth
+#define width 1024 // screenwidth
 #define height 512 // screenheight
 
 #define DBG_PUTS(level, msg) \

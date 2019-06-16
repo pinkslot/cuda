@@ -111,7 +111,7 @@ void Timer(int obsolete) {
 		// Convert to FreeImage format & save to file
 		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
 		char fname[100];
-		sprintf_s(fname, "%s%02d.png", interactiveCamera->useOpt ? "with_opt" : "without_opt", i);
+		sprintf_s(fname, "%s%02d.png", interactiveCamera->useOpt ? "blabla" : "without_opt", i);
 		FreeImage_Save(FIF_PNG, image, fname, 0);
 
 
@@ -309,10 +309,10 @@ void prepCUDAscene(){
 	//const char* scenefile = "data/egret.ply";
 	//const char* scenefile = "data/cow.ply";
 	//const char* scenefile = "data/octa.ply";
-	//const char* scenefile = "data/SIMPLE.ply";
+	const char* scenefile = "data/SIMPLE.ply";
 	//const char* scenefile = "data/bun_zipper_res2.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/bun_zipper.ply";  // teapot.ply, big_atc.ply
-	const char* scenefile = "data/happy.ply";  // teapot.ply, big_atc.ply
+	//const char* scenefile = "data/happy.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/dragon_vrip_res4.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/happy_vrip.ply";  // teapot.ply, big_atc.ply
 

@@ -425,22 +425,22 @@ __device__ float angle_diff(Vector3Df &a, Vector3Df &b) {
 
 __device__ float sigmaf(const Vector3Df &point)
 {
-	Vector3Df center1(.5f, .5f, 0.f);
+	Vector3Df center1(.4f, .4f, 0.f);
 	Vector3Df center2(-.2f, .2f, 0.f);
-	float radius1 = .3;
+	float radius1 = .15;
 	float radius2 = .1;
 
 	if ((point - center1).length() < radius1) {
-		return .5; 
+		return 9.;
 	}
 	if ((point - center2).length() < radius2) {
-		return 2.9;
+		return 0;
 	}
 
-	return .1;
+	return 1;
 }
 
-#define SPEED 1.f
+#define SPEED .2f
 
 __device__ Vector3Df path_trace(curandState *randstate,
 	Triangle *pTriangles, int* cudaBVHindexesOrTrilists, float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList)
@@ -455,7 +455,7 @@ __device__ Vector3Df path_trace(curandState *randstate,
 		cosPhi = xFloat / dist,
 		phi = acos(cosPhi);
 
-	float power = 40.f;
+	float power = 20.f;
 
 	float mu = 1.;
 	float optical_dist = exp(-2. * dist * mu);
@@ -467,22 +467,24 @@ __device__ Vector3Df path_trace(curandState *randstate,
 
 	float 
 		multiplier = 1. / 4. / M_PI,
-		rest_time = 2. * dist;
+		rest_time = 2. * dist * .2;
 
 
 
-	float I = 0.;
+	float I[3] = {0., 0., 0.};
 
-	for (int i = 1; i <= 2; i++) {
+	for (int i = 0; i <= 10; i++) {
 		if (rest_time < NUDGE_FACTOR) {
 			break;
 		}
 
 		float tau = .5 * (sqr(rest_time) - cur_point.lengthsq()) / (rest_time - dot(cur_point, cur_dir));
 
-		Vector3Df end_point = cur_point - cur_dir * tau;
+		Vector3Df end_point = cur_point - cur_dir * tau,
+			denom_point = cur_point - cur_dir * rest_time
+		;
 		
-		I += (sigmaf(end_point) * multiplier) * power * optical_dist * 2. / sqr(rest_time + cur_point.length());
+		I[i > 2 ? 2 : i] += 2. * optical_dist * multiplier / sqr(rest_time + cur_point.length()) * sigmaf(end_point) * power / denom_point.lengthsq();
 		
 		float rand_dist = curand_uniform(randstate) * tau;
 		float rand_phi = curand_uniform(randstate) * 2. * M_PI;
@@ -493,13 +495,13 @@ __device__ Vector3Df path_trace(curandState *randstate,
 		multiplier *= sigmaf(cur_point) / 4. / M_PI;
 	}
 
-	float back_problem = I * 8. * M_PI * sqr(dist) / optical_dist / power;
+	float RI = (I[0] + I[1] + I[2]) * 8. * M_PI * sqr(dist) / optical_dist / power / 25;
 
-	if (x == gridDim.x * blockDim.x / 3 && y == gridDim.y * blockDim.y / 4) {
-		printf("%f\n", back_problem);
-	}
+	// if (x == gridDim.x * blockDim.x / 3 && y == gridDim.y * blockDim.y / 4) {
+	// 	printf("%f\n", back_problem);
+	// }
 
-	return Vector3Df(back_problem, back_problem, back_problem);
+	return Vector3Df(I[0], I[1], I[2]);
 }
 
 union Colour  // 4 bytes = 4 chars = 1 float

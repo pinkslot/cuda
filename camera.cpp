@@ -21,24 +21,18 @@
 
 InteractiveCamera::InteractiveCamera()
 {
-	time = 126.2;
-	useOpt = true;
-	centerPosition = Vector3Df(-.0, 0, 0);
-	yaw = .6; // radians
-	pitch = 0.2;
-	radius = 6.5;
-	apertureRadius = 0.03; // 0.04
-	focalDistance = 6.5f;
+	centerPosition = Vector3Df(0, 0, 0);
+	yaw = 0;
+	pitch = 0.3;
+	radius = 4;
+	apertureRadius = 0.04; // 0.04
+	focalDistance = 4.0f;
 
 	resolution = make_float2(512, 512);  // width, height
 	fov = make_float2(40, 40);
 }
 
 InteractiveCamera::~InteractiveCamera() {}
-
-void InteractiveCamera::tick(float m){
-	time += m;
-}
 
 void InteractiveCamera::changeYaw(float m){
 	yaw += m;
@@ -62,11 +56,6 @@ void InteractiveCamera::changeAltitude(float m){
 
 void InteractiveCamera::goForward(float m){
 	centerPosition += viewDirection * m;
-}
-
-void InteractiveCamera::sideStep(float m){
-	centerPosition += cross(viewDirection, Vector3Df(0, 1, 0)) * m;
-	//fixCenterPosition();
 }
 
 void InteractiveCamera::strafe(float m){
@@ -125,7 +114,7 @@ void InteractiveCamera::buildRenderCamera(Camera* renderCamera){
 	float zDirection = cos(yaw) * cos(pitch);
 	Vector3Df directionToCamera = Vector3Df(xDirection, yDirection, zDirection);
 	viewDirection = directionToCamera * (-1.0);
-	Vector3Df eyePosition = centerPosition + directionToCamera * radius;
+	Vector3Df eyePosition = centerPosition +directionToCamera * radius;
 	//Vector3Df eyePosition = centerPosition; // rotate camera from stationary viewpoint
 	
 
@@ -136,8 +125,6 @@ void InteractiveCamera::buildRenderCamera(Camera* renderCamera){
 	renderCamera->fov = make_float2(fov.x, fov.y);
 	renderCamera->apertureRadius = apertureRadius;
 	renderCamera->focalDistance = focalDistance;
-	renderCamera->time = time;
-	renderCamera->useOpt = useOpt;
 }
 
 float mod(float x, float y) { // Does this account for -y ???
@@ -172,7 +159,7 @@ void InteractiveCamera::fixApertureRadius() {
 }
 
 void InteractiveCamera::fixFocalDistance() {
-	float minFocalDist = 0.2;
-	float maxFocalDist = 100.0;
-	focalDistance = clamp2(focalDistance, minFocalDist, maxFocalDist);
+float minFocalDist = 0.2;
+float maxFocalDist = 100.0;
+focalDistance = clamp2(focalDistance, minFocalDist, maxFocalDist);
 }

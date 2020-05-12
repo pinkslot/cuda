@@ -1,8 +1,8 @@
 /*
 *  CUDA based triangle mesh path tracer using BVH acceleration by Sam lapere, 2016
-*  BVH implementation based on real-time CUDA ray tracer by Thanassis Tsiodras, 
-*  http://users.softlab.ntua.gr/~ttsiod/cudarenderer-BVH.html 
-*  Interactive camera with depth of field based on CUDA path tracer code 
+*  BVH implementation based on real-time CUDA ray tracer by Thanassis Tsiodras,
+*  http://users.softlab.ntua.gr/~ttsiod/cudarenderer-BVH.html
+*  Interactive camera with depth of field based on CUDA path tracer code
 *  by Peter Kutz and Yining Karl Li, https://github.com/peterkutz/GPUPathTracer
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -19,7 +19,7 @@
 *  along with this program; if not, write to the Free Software
 *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
- 
+
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -30,8 +30,8 @@
 #include <vector_functions.h>
 #include "device_launch_parameters.h"
 #include "cutil_math.h"
-#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{D3FD22D5-4D82-406C-ADC6-962E5889C52D}\common\inc\GL\glew.h"
-#include "C:\Program Files\NVIDIA Corporation\Installer2\CUDASamples_7.5.{D3FD22D5-4D82-406C-ADC6-962E5889C52D}\common\inc\GL\freeglut.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glew.h"
+#include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glut.h"
 #include <cuda_runtime.h>
 #include <cuda_gl_interop.h>
 #include <curand.h>
@@ -96,7 +96,7 @@ struct Sphere {
 		// Solution x = (-b +- sqrt(b*b - 4ac)) / 2a
 		// Solve t^2*d.d + 2*t*(o-p).d + (o-p).(o-p)-R^2 = 0 
 
-		Vector3Df op = Vector3Df(pos) - r.orig;  //
+		Vector3Df op = Vector3Df(pos.x, pos.y, pos.z) - r.orig;  //
 		float t;
 		float b = dot(op, r.dir);
 		float disc = b*b - dot(op, op) + rad*rad; // discriminant
@@ -126,43 +126,43 @@ struct Sphere {
 #define RAD 440.f
 
 __device__ Sphere spheres[] = {
-	{ 
+	{
 		RAD, { 20.f - RAD, 0.f, 0.0f },
 		superMedia,
 		superSrc
-	}, 
+	},
 	/*{
-		.3f, { -.5f, 1.4f, 0.f },
-		mirrorMedia,
-		{ { .0, -1.0, 0.0 }, 70., .3 },
+	.3f, { -.5f, 1.4f, 0.f },
+	mirrorMedia,
+	{ { .0, -1.0, 0.0 }, 70., .3 },
 	},{
-		.4f, { .0f, -0.5f, -1.f },
-		objectMedia,
-		emptySrc
+	.4f, { .0f, -0.5f, -1.f },
+	objectMedia,
+	emptySrc
 	},
 	{
-		.4f, { -.5f, -0.5f, -.0f },
-		mirrorMedia,
-		emptySrc
+	.4f, { -.5f, -0.5f, -.0f },
+	mirrorMedia,
+	emptySrc
 	},
 	{
-		.4f, { .5f, -0.5f, -.0f },
-		diffMedia,
-		emptySrc
+	.4f, { .5f, -0.5f, -.0f },
+	diffMedia,
+	emptySrc
 	},*/
 	{
 		1000000.f, { .0f, -1000001.f, .0f },
 		diffMedia,
 		emptySrc
 	},
-//	{ .7f, { 0, -1 + .7, 0 }, objectMedia, emptySrc },
+	//	{ .7f, { 0, -1 + .7, 0 }, objectMedia, emptySrc },
 	{ .5f, { -1.051436f, -1 + .5, .772216f }, diffMedia, emptySrc },
 	{ .65f, { 1.679223f, -1 + .65, 1.592339f }, scatMedia, emptySrc },
 	{ 0.4f, { -2.f, -1 + .4, -1.430057f }, scatMedia, emptySrc },
 	{ 0.5f, { -0.102131f, -1 + .5, -1.430057f }, mirrorMedia, emptySrc },
 	{ 0.4f, { 1.085430f, -1 + .4, -.848117f }, diffMedia, emptySrc },
 	{ .5f, { 1.50875f, -1 + .5, -1.837097f }, mirrorMedia, emptySrc },
-	
+
 
 };
 
@@ -203,12 +203,12 @@ __device__ bool RayIntersectsBox(const Vector3Df& originInWorldSpace, const Vect
 
 	float2 limits;
 
-// box intersection routine
+	// box intersection routine
 #define CHECK_NEAR_AND_FAR_INTERSECTION(c)							    \
     if (rayInWorldSpace.##c == 0.f) {						    \
 	if (originInWorldSpace.##c < limits.x) return false;					    \
 	if (originInWorldSpace.##c > limits.y) return false;					    \
-	} else {											    \
+		} else {											    \
 	float T1 = (limits.x - originInWorldSpace.##c)/rayInWorldSpace.##c;			    \
 	float T2 = (limits.y - originInWorldSpace.##c)/rayInWorldSpace.##c;			    \
 	if (T1>T2) { float tmp=T1; T1=T2; T2=tmp; }						    \
@@ -216,20 +216,20 @@ __device__ bool RayIntersectsBox(const Vector3Df& originInWorldSpace, const Vect
 	if (T2 < Tfar)  Tfar = T2;								    \
 	if (Tnear > Tfar)	return false;									    \
 	if (Tfar < 0.f)	return false;									    \
-	}
+		}
 
 	limits = tex1Dfetch(g_pCFBVHlimitsTexture, 3 * boxIdx); // box.bottom._x/top._x placed in limits.x/limits.y
 	//limits = make_float2(cudaBVHlimits[6 * boxIdx + 0], cudaBVHlimits[6 * boxIdx + 1]);
 	CHECK_NEAR_AND_FAR_INTERSECTION(x)
-	limits = tex1Dfetch(g_pCFBVHlimitsTexture, 3 * boxIdx + 1); // box.bottom._y/top._y placed in limits.x/limits.y
+		limits = tex1Dfetch(g_pCFBVHlimitsTexture, 3 * boxIdx + 1); // box.bottom._y/top._y placed in limits.x/limits.y
 	//limits = make_float2(cudaBVHlimits[6 * boxIdx + 2], cudaBVHlimits[6 * boxIdx + 3]);
 	CHECK_NEAR_AND_FAR_INTERSECTION(y)
-	limits = tex1Dfetch(g_pCFBVHlimitsTexture, 3 * boxIdx + 2); // box.bottom._z/top._z placed in limits.x/limits.y
+		limits = tex1Dfetch(g_pCFBVHlimitsTexture, 3 * boxIdx + 2); // box.bottom._z/top._z placed in limits.x/limits.y
 	//limits = make_float2(cudaBVHlimits[6 * boxIdx + 4], cudaBVHlimits[6 * boxIdx + 5]);
 	CHECK_NEAR_AND_FAR_INTERSECTION(z)
 
-	// If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
-	return true;
+		// If Box survived all above tests, return true with intersection point Tnear and exit point Tfar.
+		return true;
 }
 
 
@@ -257,18 +257,18 @@ __device__ bool BVH_IntersectTriangles(
 	// create a stack for each ray
 	// the stack is just a fixed size array of indices to BVH nodes
 	int stack[BVH_STACK_SIZE];
-	
+
 	int stackIdx = 0;
-	stack[stackIdx++] = 0; 
+	stack[stackIdx++] = 0;
 	Vector3Df hitpoint;
 
 	// while the stack is not empty
 	while (stackIdx) {
-		
+
 		// pop a BVH node (or AABB, Axis Aligned Bounding Box) from the stack
 		int boxIdx = stack[stackIdx - 1];
 		//uint* pCurrent = &cudaBVHindexesOrTrilists[boxIdx]; 
-		
+
 		// decrement the stackindex
 		stackIdx--;
 
@@ -288,7 +288,7 @@ __device__ bool BVH_IntersectTriangles(
 				// return if stack size is exceeded
 				if (stackIdx>BVH_STACK_SIZE)
 				{
-					return false; 
+					return false;
 				}
 			}
 		}
@@ -299,7 +299,7 @@ __device__ bool BVH_IntersectTriangles(
 				// check if triangle is the same as the one intersected by previous ray	
 				// to avoid self-reflections/refractions
 				if (avoidSelf == idx)
-					continue; 
+					continue;
 				// fetch triangle center and normal from texture memory
 				float4 center = tex1Dfetch(g_trianglesTexture, 5 * idx);
 				float4 normal = tex1Dfetch(g_trianglesTexture, 5 * idx + 1);
@@ -318,13 +318,13 @@ __device__ bool BVH_IntersectTriangles(
 				// ray triangle intersection
 				// Is the intersection of the ray with the triangle's plane INSIDE the triangle?
 				float4 ee1 = tex1Dfetch(g_trianglesTexture, 5 * idx + 2);
-				float kt1 = dot(ee1, hit) - ee1.w; 
+				float kt1 = dot(ee1, hit) - ee1.w;
 				if (kt1<0.0f) continue;
 				float4 ee2 = tex1Dfetch(g_trianglesTexture, 5 * idx + 3);
-				float kt2 = dot(ee2, hit) - ee2.w; 
+				float kt2 = dot(ee2, hit) - ee2.w;
 				if (kt2<0.0f) continue;
 				float4 ee3 = tex1Dfetch(g_trianglesTexture, 5 * idx + 4);
-				float kt3 = dot(ee3, hit) - ee3.w; 
+				float kt3 = dot(ee3, hit) - ee3.w;
 				if (kt3<0.0f) continue;
 				// ray intersects triangle, "hit" is the world space coordinate of the intersection.
 				{
@@ -342,7 +342,7 @@ __device__ bool BVH_IntersectTriangles(
 			}
 		}
 	}
-	
+
 	return pBestTriIdx != -1;
 }
 
@@ -372,9 +372,9 @@ struct PhasePoint {
 };
 
 __device__ void rand_dir(
-	curandState *randstate, 
-	Vector3Df *new_dir, 
-	Vector3Df *old_dir = nullptr, 
+	curandState *randstate,
+	Vector3Df *new_dir,
+	Vector3Df *old_dir = nullptr,
 	bool only_pos = false,
 	bool custom_indic = false,
 	float indic = -1)
@@ -400,9 +400,9 @@ __device__ void rand_dir(
 		Vector3Df rand_dir = *new_dir;
 		float denom = sqrt(1 - sqr(x3));
 
-		new_dir->x = dot(Vector3Df(x1 * x3 / denom,		-x2 / denom,	x1), rand_dir);
-		new_dir->y = dot(Vector3Df(x2 * x3 / denom,		x1 / denom,		x2), rand_dir);
-		new_dir->z = dot(Vector3Df(-denom,				0,				x3), rand_dir);
+		new_dir->x = dot(Vector3Df(x1 * x3 / denom, -x2 / denom, x1), rand_dir);
+		new_dir->y = dot(Vector3Df(x2 * x3 / denom, x1 / denom, x2), rand_dir);
+		new_dir->z = dot(Vector3Df(-denom, 0, x3), rand_dir);
 	}
 	new_dir->normalize();
 }
@@ -431,16 +431,22 @@ __device__ float sigmaf(const Vector3Df &point)
 	float radius2 = .1;
 
 	if ((point - center1).length() < radius1) {
-		return 9.;
+		return .9;
 	}
 	if ((point - center2).length() < radius2) {
-		return 0;
+		return .8;
 	}
 
-	return 1;
+	return .1;
 }
 
-#define SPEED .2f
+#define C 1.f
+#define MU .9f
+
+__device__ float tau(Vector3Df r, Vector3Df k, float t)
+{
+	return .5 * (sqr(C * t) - r.lengthsq()) / (C * t - dot(r, k));
+}
 
 __device__ Vector3Df path_trace(curandState *randstate,
 	Triangle *pTriangles, int* cudaBVHindexesOrTrilists, float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList)
@@ -448,61 +454,53 @@ __device__ Vector3Df path_trace(curandState *randstate,
 	unsigned int x = blockIdx.x*blockDim.x + threadIdx.x;
 	unsigned int y = blockIdx.y*blockDim.y + threadIdx.y;
 
-	float xFloat = (float)x / gridDim.x / blockDim.x * 2. - 1.,
-		yFloat = (float)y / gridDim.y / blockDim.y;
-
-	float dist = sqrt(sqr(xFloat) + sqr(yFloat)),
-		cosPhi = xFloat / dist,
-		phi = acos(cosPhi);
-
-	float power = 20.f;
-
-	float mu = 1.;
-	float optical_dist = exp(-2. * dist * mu);
-
+	float 
+		xFloat = (float)x / gridDim.x / blockDim.x * 2. - 1.,
+		yFloat = (float)y / gridDim.y / blockDim.y
+	;
 
 	Vector3Df 
-		cur_point(0., 0., 0.),
-		cur_dir = Vector3Df(-cosPhi, -sin(phi), 0.);
+		r = Vector3Df(0., 0., 0.),
+		k = Vector3Df(xFloat, yFloat, 0.) * -1.
+	;
+	k.normalize();
 
 	float 
-		multiplier = 1. / 4. / M_PI,
-		rest_time = 2. * dist * .2;
+		dist = sqrt(sqr(xFloat) + sqr(yFloat)),
+		t = dist * 2 / C
+	;
 
+	float opt_dist = exp(-MU * dist * 2.);
 
+	float
+		I = 0,
+		sigma_tau_prod = 1.f;
+	;
+	
+	float I1 = C * opt_dist * sigmaf(r - k * tau(r, k, t)) / 2. / M_PI / (C * t - dot(r, k));
 
-	float I[3] = {0., 0., 0.};
+	for (int i = 0; i < 6; i++) {
+		float tau_value = tau(r, k, t);
 
-	for (int i = 0; i <= 10; i++) {
-		if (rest_time < NUDGE_FACTOR) {
-			break;
-		}
+		I += C * opt_dist / 2. / M_PI * sigmaf(r - k * tau_value) / (C * t - dot(r, k)) * sigma_tau_prod;
 
-		float tau = .5 * (sqr(rest_time) - cur_point.lengthsq()) / (rest_time - dot(cur_point, cur_dir));
-
-		Vector3Df end_point = cur_point - cur_dir * tau,
-			denom_point = cur_point - cur_dir * rest_time
+		float 
+			rand_dist = curand_uniform(randstate) * tau_value,
+			rand_phi = curand_uniform(randstate) * 2. * M_PI
 		;
-		
-		I[i > 2 ? 2 : i] += 2. * optical_dist * multiplier / sqr(rest_time + cur_point.length()) * sigmaf(end_point) * power / denom_point.lengthsq();
-		
-		float rand_dist = curand_uniform(randstate) * tau;
-		float rand_phi = curand_uniform(randstate) * 2. * M_PI;
 
-		cur_point -= cur_dir * rand_dist;
-		cur_dir = Vector3Df(cos(rand_phi), sin(rand_phi), 0.);
-		rest_time -= rand_dist;	
-		multiplier *= sigmaf(cur_point) / 4. / M_PI;
+		r = r - k * rand_dist;
+		k = Vector3Df(cos(rand_phi), sin(rand_phi), 0.f);
+		sigma_tau_prod = sigmaf(r) * tau_value;
+		t = t - rand_dist / C;
 	}
 
-	float RI = (I[0] + I[1] + I[2]) * 8. * M_PI * sqr(dist) / optical_dist / power / 25;
+	float R = I * 4.f * M_PI * dist / C / opt_dist;
 
-	// if (x == gridDim.x * blockDim.x / 3 && y == gridDim.y * blockDim.y / 4) {
-	// 	printf("%f\n", back_problem);
-	// }
-
-	return Vector3Df(I[0], I[1], I[2]);
+	return Vector3Df(R, R, R);
 }
+
+
 
 union Colour  // 4 bytes = 4 chars = 1 float
 {
@@ -558,16 +556,16 @@ __global__ void CoreLoopPathTracingKernel(Vector3Df* output, Vector3Df* accumbuf
 		float sy = (jitterValueY + pixely) / (cudaRendercam->resolution.y - 1);
 
 		// compute pixel on screen
-		Vector3Df pointOnPlaneOneUnitAwayFromEye = middle + ( horizontal * ((2 * sx) - 1)) + ( vertical * ((2 * sy) - 1));
+		Vector3Df pointOnPlaneOneUnitAwayFromEye = middle + (horizontal * ((2 * sx) - 1)) + (vertical * ((2 * sy) - 1));
 		Vector3Df pointOnImagePlane = rendercampos + ((pointOnPlaneOneUnitAwayFromEye - rendercampos) * cudaRendercam->focalDistance); // Important for depth of field!		
 
 		// calculation of depth of field / camera aperture 
 		// based on https://github.com/peterkutz/GPUPathTracer 
-		
+
 		Vector3Df aperturePoint;
 
 		if (cudaRendercam->apertureRadius > 0.00001) { // the small number is an epsilon value.
-		
+
 			// generate random numbers for sampling a point on the aperture
 			float random1 = curand_uniform(&randState);
 			float random2 = curand_uniform(&randState);
@@ -585,7 +583,7 @@ __global__ void CoreLoopPathTracingKernel(Vector3Df* output, Vector3Df* accumbuf
 		}
 
 		// calculate ray direction of next ray in path
-		Vector3Df apertureToImagePlane = pointOnImagePlane - aperturePoint; 
+		Vector3Df apertureToImagePlane = pointOnImagePlane - aperturePoint;
 		apertureToImagePlane.normalize(); // ray direction, needs to be normalised
 		Vector3Df rayInWorldSpace = apertureToImagePlane;
 		// in theory, this should not be required
@@ -593,9 +591,8 @@ __global__ void CoreLoopPathTracingKernel(Vector3Df* output, Vector3Df* accumbuf
 
 		// origin of next ray in path
 		Vector3Df originInWorldSpace = aperturePoint;
-
 		finalcol += path_trace(&randState, pTriangles, cudaBVHindexesOrTrilists, cudaBVHlimits, cudaTriangleIntersectionData, cudaTriIdxList) * (1.0f / samps);
-	}       
+	}
 
 	// add pixel colour to accumulation buffer (accumulates all samples) 
 	accumbuffer[i] += finalcol;
@@ -615,7 +612,7 @@ bool g_bFirstTime = true;
 
 // the gateway to CUDA, called from C++ (in void disp() in main.cpp)
 void cudarender(Vector3Df* dptr, Vector3Df* accumulatebuffer, Triangle* cudaTriangles, int* cudaBVHindexesOrTrilists,
-	float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList, 
+	float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList,
 	unsigned framenumber, unsigned hashedframes, Camera* cudaRendercam){
 
 	if (g_bFirstTime) {
@@ -644,7 +641,7 @@ void cudarender(Vector3Df* dptr, Vector3Df* accumulatebuffer, Triangle* cudaTria
 		cudaChannelFormatDesc channel5desc = cudaCreateChannelDesc<float4>();
 		cudaBindTexture(NULL, &g_trianglesTexture, cudaTriangleIntersectionData, &channel5desc, g_trianglesNo * 20 * sizeof(float));
 	}
-	dim3 block(32, 32, 1);   // dim3 CUDA specific syntax, block and grid are required to schedule CUDA threads over streaming multiprocessors
+	dim3 block(16, 16, 1);   // dim3 CUDA specific syntax, block and grid are required to schedule CUDA threads over streaming multiprocessors
 	dim3 grid(width / block.x, height / block.y, 1);
 
 	/*cudaEvent_t     start, stop;
@@ -659,6 +656,6 @@ void cudarender(Vector3Df* dptr, Vector3Df* accumulatebuffer, Triangle* cudaTria
 	cudaEventSynchronize(stop);
 	float   elapsedTime;
 	cudaEventElapsedTime(&elapsedTime,
-		start, stop);
+	start, stop);
 	printf("Time to generate:  %3.1f ms\n", elapsedTime);*/
 }

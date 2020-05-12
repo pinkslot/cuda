@@ -19,8 +19,6 @@
 *  along with this program; if not, write to the Free Software
 *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-#define _CRT_SECURE_NO_WARNINGS
-#include "FreeImage.h"
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include "C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v7.5\extras\CUPTI\include\GL\glew.h"
@@ -32,6 +30,7 @@
 #include "cuda_pathtracer.h"
 #include "loader.h"
 #include "camera.h"
+
 #ifndef M_PI
 #define M_PI 3.14156265
 #endif
@@ -50,9 +49,14 @@ float *cudaTriangleIntersectionData2 = NULL;
 int* cudaTriIdxList2 = NULL;
 float *cudaBVHlimits2 = NULL;
 int *cudaBVHindexesOrTrilists2 = NULL;
-InteractiveCamera* interactiveCamera = NULL;
 
 bool buffer_reset = false;
+
+void Timer(int obsolete) {
+
+	glutPostRedisplay();
+	glutTimerFunc(10, Timer, 0);
+}
 
 __device__ float timer = 0.0f;
 
@@ -68,6 +72,7 @@ float rotate_x = 0.0, rotate_y = 0.0;
 float translate_z = -30.0;
 
 // TODO: Delete stuff at some point!!!
+InteractiveCamera* interactiveCamera = NULL;
 Camera* hostRendercam = NULL;  
 Clock watch;
 
@@ -91,52 +96,6 @@ void initCamera()
 
 	interactiveCamera->setResolution(width, height);
 	interactiveCamera->setFOVX(45);
-}
-
-void Timer(int obsolete) {
-	static time_t t1 = clock();
-	int msec = (clock() - t1) / CLOCKS_PER_SEC;
-	static int counter = 4, i = 1;
-//	counter = !counter ? msec : counter;
-	if (msec >= counter) {
-		printf("%dth file in %d seconds\n", i, msec);
-		counter *= 2;
-//		interactiveCamera->tick(1.7); buffer_reset = true;
-
-		// Make the BYTE array, factor of 3 because it's RBG.
-		GLubyte* pixels = new GLubyte[3 * width * height];
-		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-		glReadPixels(0, 0, width, height, GL_BGR, GL_UNSIGNED_BYTE, pixels);
-
-		// Convert to FreeImage format & save to file
-		FIBITMAP* image = FreeImage_ConvertFromRawBits(pixels, width, height, 3 * width, 24, 0xFF0000, 0x00FF00, 0x0000FF, false);
-		char fname[100];
-		sprintf_s(fname, "%s%02d.png", interactiveCamera->useOpt ? "blabla" : "without_opt", i);
-		FreeImage_Save(FIF_PNG, image, fname, 0);
-
-
-		if (i == 14) {
-			counter = 4;
-			t1 = clock();
-			interactiveCamera->useOpt ^= true;
-			buffer_reset = true;
-			/*			if (i == 70) {
-				initCamera();
-			}
-			else {
-				interactiveCamera->tick(1.5);
-			}
-			*/
-		}
-		FreeImage_Unload(image);
-		delete[] pixels;
-
-		//interactiveCamera->tick(.3); buffer_reset = true;
-		i++;
-	}
-
-	glutPostRedisplay();
-	glutTimerFunc(30, Timer, 0);
 }
 
 // create OpenGL vertex buffer object for CUDA to store calculated pixels
@@ -173,7 +132,7 @@ void disp(void)
 
 	cudaThreadSynchronize();
 
-	// maps a buffer object for access by CUDA
+	// maps a buffer object for acces by CUDA
 	cudaGLMapBufferObject((void**)&finaloutputbuffer, vbo);									
 
 	//clear all pixels:
@@ -209,10 +168,6 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	
 	case(27) : exit(0);
 	case(' ') : initCamera(); buffer_reset = true; break;
-	case('5') : interactiveCamera->tick(.2); buffer_reset = true; 
-		printf("time=%f\n", interactiveCamera->get_time());  break;
-	case('4') : interactiveCamera->tick(-.2); buffer_reset = true;
-		printf("time=%f\n", interactiveCamera->get_time());  break;
 	case('a') : interactiveCamera->strafe(-0.05f); buffer_reset = true; break;
 	case('d') : interactiveCamera->strafe(0.05f); buffer_reset = true; break;
 	case('r') : interactiveCamera->changeAltitude(0.05f); buffer_reset = true; break;
@@ -223,9 +178,6 @@ void keyboard(unsigned char key, int /*x*/, int /*y*/)
 	case('h') : interactiveCamera->changeApertureDiameter(-0.1); buffer_reset = true; break;
 	case('t') : interactiveCamera->changeFocalDistance(0.1); buffer_reset = true; break;
 	case('y') : interactiveCamera->changeFocalDistance(-0.1); buffer_reset = true; break;
-	case('o') : interactiveCamera->useOpt = !interactiveCamera->useOpt; 
-		printf("optimization %s\n", interactiveCamera->useOpt ? "ON" : "OFF");
-		buffer_reset = true; break;
 	}
 }
 
@@ -262,13 +214,12 @@ void motion(int x, int y)
 		}
 		else if (theButtonState == GLUT_MIDDLE_BUTTON) // Zoom
 		{
-			interactiveCamera->changeRadius(-deltaY * 0.01);
+			interactiveCamera->changeAltitude(-deltaY * 0.01);
 		}
 
 		if (theButtonState == GLUT_RIGHT_BUTTON) // camera move
 		{
-			interactiveCamera->changeAltitude(-deltaY * 0.01);
-			interactiveCamera->sideStep(deltaX * 0.01);
+			interactiveCamera->changeRadius(-deltaY * 0.01);
 		}
 
 		lastX = x;
@@ -289,31 +240,16 @@ void mouse(int button, int state, int x, int y)
 	motion(x, y);
 }
 
-void mouseWheel(int button, int dir, int x, int y)
-{
-	interactiveCamera->goForward(dir / 10.);
-	return;
-}
-
 // initialises scene data, builds BVH
 void prepCUDAscene(){
 
 	// specify scene filename 
-	//const char* scenefile = "data/teapot.ply";  
-	//teapot.ply, big_atc.ply
-	//const char* scenefile = "data/happy.ply";
-	//const char* scenefile = "data/teapot.ply";
-	//const char* scenefile = "data/shark.ply";
-	//const char* scenefile = "data/chopper.ply";
-	//const char* scenefile = "data/dodecahedron.ply";
-	//const char* scenefile = "data/egret.ply";
-	//const char* scenefile = "data/cow.ply";
-	//const char* scenefile = "data/octa.ply";
-	const char* scenefile = "data/SIMPLE.ply";
+	//const char* scenefile = "data/teapot.ply";  // teapot.ply, big_atc.ply
+	//const char* scenefile = "data/bunny.obj";
 	//const char* scenefile = "data/bun_zipper_res2.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/bun_zipper.ply";  // teapot.ply, big_atc.ply
-	//const char* scenefile = "data/happy.ply";  // teapot.ply, big_atc.ply
-	//const char* scenefile = "data/dragon_vrip_res4.ply";  // teapot.ply, big_atc.ply
+	const char* scenefile = "data/dragon_vrip_res4.ply";  // teapot.ply, big_atc.ply
+	//const char* scenefile = "data/dragon_vrip.ply";  // teapot.ply, big_atc.ply
 	//const char* scenefile = "data/happy_vrip.ply";  // teapot.ply, big_atc.ply
 
 	// load scene
@@ -437,8 +373,9 @@ void prepCUDAscene(){
 	// Initialisation Done!
 	std::cout << "Rendering data initialised and copied to CUDA global memory\n";
 }
+
 int main(int argc, char** argv){
-	//freopen("qwe.log", "w", stdout);
+
 	// initialise an interactive camera on the CPU side
 	initCamera();
 	// create a CPU camera

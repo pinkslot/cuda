@@ -29,8 +29,8 @@
 #include <ctime>
  
 #define BVH_STACK_SIZE 32
-#define width 1024 // screenwidth
-#define height 512 // screenheight
+#define width 1280	// screenwidth
+#define height 720 // screenheight
 
 #define DBG_PUTS(level, msg) \
     do { if (level <= 1) { puts(msg); fflush(stdout); }} while (0)
@@ -49,7 +49,7 @@ extern CacheFriendlyBVHNode* g_pCFBVH;
 // The gateway to CUDA, called from C++ (src/main.cpp)
 
 void cudarender(Vector3Df* dptr, Vector3Df* accumulatebuffer, Triangle* cudaTriangles, int* cudaBVHindexesOrTrilists,
-	float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList, unsigned framenumber, unsigned hashedframes, Camera* cudaRendercam);
+	float* cudaBVHlimits, float* cudaTriangleIntersectionData, int* cudaTriIdxList, unsigned framenumber, unsigned hashedframes, Camera* cudaRendercam); 
 
 
 struct Clock {

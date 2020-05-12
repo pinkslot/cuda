@@ -17,8 +17,6 @@
 *  along with this program; if not, write to the Free Software
 *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
-#define _CRT_SECURE_NO_WARNINGS
-
 #include <algorithm>
 #include <vector>
 #include <cfloat>
@@ -508,7 +506,6 @@ void UpdateBoundingVolumeHierarchy(const char *filename)
 		BVHcacheFilename += ".bvh";
 		FILE *fp = fopen(BVHcacheFilename.c_str(), "rb");
 		if (!fp) {
-		//if (1) {
 			// No cached BVH data - we need to calculate them
 			Clock me;
 			g_pSceneBVH = CreateBVH();
